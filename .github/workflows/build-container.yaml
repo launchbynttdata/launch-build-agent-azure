@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "**"
+    tags:
+      - "**"
 
 permissions:
   contents: read
@@ -21,7 +23,7 @@ jobs:
       - name: Build image
         run: docker buildx build -t launch-build-agent-azure --file ./Dockerfile . --platform linux/amd64 --load
       - name: Test image
-        run: echo "git clone https://github.com/launchbynttdata/tf-azurerm-module_primitive-resource_group.git; cd tf-azurerm-module_primitive-resource_group; make configure" | docker run -i launch-build-agent-base /usr/bin/bash
+        run: echo "command -v az>/dev/null 2>&1 && git clone https://github.com/launchbynttdata/tf-azurerm-module_primitive-resource_group.git; cd tf-azurerm-module_primitive-resource_group; make configure" | docker run -i launch-build-agent-azure /usr/bin/bash
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Push image
