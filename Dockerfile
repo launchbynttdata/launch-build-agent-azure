@@ -17,6 +17,6 @@ RUN chmod +x /azp/az-entry.sh \
 
 ENTRYPOINT ["/bin/bash", "-c", " /azp/az-entry.sh"]
 
-FROM lcaf-provider-${LAUNCH_PROVIDER} AS final
+FROM base AS final
 
 RUN echo "Built image for: ${LAUNCH_PROVIDER}"
