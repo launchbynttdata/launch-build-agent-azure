@@ -9,12 +9,12 @@ WORKDIR /azp/
 
 COPY ./scripts/az-entry.sh  /azp/az-entry.sh
 
-RUN chmod +x /azp/az-entry.sh \
-    && curl -sL -o InstallAzureCLIDeb.sh https://aka.ms/InstallAzureCLIDeb \
+USER root
+RUN curl -sL -o InstallAzureCLIDeb.sh https://aka.ms/InstallAzureCLIDeb \
     && chmod +x InstallAzureCLIDeb.sh \
     && ./InstallAzureCLIDeb.sh \
     && rm -f InstallAzureCLIDeb.sh
-
+USER launch
 ENTRYPOINT ["/bin/bash", "-c", " /azp/az-entry.sh"]
 
 FROM base AS final
