@@ -48,28 +48,21 @@ print_header() {
 # Let the agent ignore the token env variables
 export VSO_AGENT_IGNORE="AZP_TOKEN,AZP_TOKEN_FILE"
 
-source ./env.sh
+print_header "Determining matching Azure Pipelines agent..."
 
-trap "cleanup; exit 0" EXIT
-trap "cleanup; exit 130" INT
-trap "cleanup; exit 143" TERM
+AZP_AGENT_PACKAGES=$(curl -LsS \
+    -u user:$(cat "${AZP_TOKEN_FILE}") \
+    -H "Accept:application/json;" \
+    "${AZP_URL}/_apis/distributedtask/packages/agent?platform=${TARGETARCH}&top=1")
 
-print_header "Configuring Azure Pipelines agent..."
+AZP_AGENT_PACKAGE_LATEST_URL=$(echo "${AZP_AGENT_PACKAGES}" | jq -r ".value[0].downloadUrl")
 
-./config.sh --unattended \
-  --agent "${AZP_AGENT_NAME:-$(hostname)}" \
-  --url "${AZP_URL}" \
-  --auth "PAT" \
-  --token $(cat "${AZP_TOKEN_FILE}") \
-  --pool "${AZP_POOL:-Default}" \
-  --work "${AZP_WORK:-_work}" \
-  --replace \
-  --acceptTeeEula & wait $!
+if [ -z "${AZP_AGENT_PACKAGE_LATEST_URL}" -o "${AZP_AGENT_PACKAGE_LATEST_URL}" == "null" ]; then
+  echo 1>&2 "error: could not determine a matching Azure Pipelines agent"
+  echo 1>&2 "check that account "${AZP_URL}" is correct and the token is valid for that account"
+  exit 1
+fi
 
-print_header "Running Azure Pipelines agent..."
+print_header "Downloading and extracting Azure Pipelines agent..."
 
-chmod +x ./run.sh
-
-# To be aware of TERM and INT signals call ./run.sh
-# Running it with the --once flag at the end will shut down the agent after the build is executed
-./run.sh "$@" & wait $!
+curl -LsS "${AZP_AGENT_PACKAGE_LATEST_URL}" | tar -xz & wait $!
